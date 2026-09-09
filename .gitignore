@@ -1,0 +1,13 @@
+# Your actual work product never belongs in the operating-model repo.
+work/
+
+# Local overrides
+.claude/settings.local.json
+CLAUDE.local.md
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
