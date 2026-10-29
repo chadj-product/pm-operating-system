@@ -1,6 +1,6 @@
 # PM Operating System
 
-**An AI-augmented operating model for product management, built on [Claude Code](https://claude.com/claude-code).**
+**An AI-augmented operating model for product management, built on [Claude Code](https://claude.com/product/claude-code).**
 
 Not a prompt library. A structured system in which product work moves through defined
 stages, each stage has a skill that knows how to do it, and specialist agents review the
@@ -28,9 +28,10 @@ capture ──▶ triage ──▶ sketch ──▶ PRD ──▶ review ──�
    └─ 20-second capture, no structure required
 ```
 
-Each arrow is a skill. Each skill knows what its stage requires, where the output belongs,
-and what has to be true before the work advances. The lifecycle is enforced, not suggested
-— a hook fails the write if an artifact lands outside its stage.
+The shipped skills describe stage requirements, output paths, and exit conditions.
+This public checkout includes skills, rules, and reviewer definitions; it does not include
+`/promote`, `/sketch`, `/archive`, hook scripts, or hook configuration. Lifecycle gates are
+procedural here. See [Lifecycle](docs/LIFECYCLE.md) for the supported path and limits.
 
 ---
 
@@ -47,13 +48,14 @@ This inverts that. **The convention lives in the repository, not in the operator
 | **Rules** | Always-loaded constraints | Terminology, output standards, safety boundaries. Non-negotiable and cheap — they cost context on every turn, so there are only a few. |
 | **Skills** | Stage-scoped procedures | Load only when relevant (by path, by trigger, or by explicit invocation). A skill is a checklist an agent cannot skip, plus the template it must fill. |
 | **Agents** | Specialist reviewers | Each has one job, one point of view, and no authority to rewrite the artifact. They report; the orchestrator decides. |
-| **Hooks** | Mechanical enforcement | The part that makes it real. A convention nobody can violate is a convention; a convention in a style guide is a suggestion. |
-| **Templates** | The shape of the output | Every artifact type has one. Consistency is what makes a portfolio of documents reviewable. |
+| **Hooks** | Mechanical enforcement (design; not shipped) | Block invalid paths or warn about missing sections when implemented and wired locally. |
+| **Templates** | The shape of the output | Some structures are inline in skills; referenced PRD and competitive-analysis template files must be supplied locally. |
 
 The load-bearing insight is the fourth row. **Documentation does not enforce anything.**
-The first version of this system was a very good style guide, and compliance with it decayed
+In the working deployment, the first version was a very good style guide, and compliance
+with it decayed
 to roughly nothing within a month. Compliance became permanent the day a hook started
-failing the write.
+failing the write. Those hooks are not included in this public checkout.
 
 ---
 
@@ -74,15 +76,19 @@ engineering, it is read by four agents that are explicitly *not* trying to be he
 Running four critics costs a few minutes. Shipping a PRD with an unvalidated reach estimate
 costs a quarter. The asymmetry is the entire argument.
 
-**None of them can edit the document.** A reviewer with write access becomes a co-author, and
-a co-author stops being a critic. They return findings; a human decides which ones are real.
+**All four are instructed to report findings without editing the document.** Three have
+only `Read, Grep, Glob` tool grants; `tech-feasibility` also has `Bash`, so its tool list
+alone does not mechanically prevent writes. They return findings; a human decides which
+ones are real.
 
 ### The judges are themselves evaluated
 
 Using a model to grade documents raises the question most "AI reviewer" systems never answer:
-how do you know the judge works? This one is regression-tested against a **balanced** corpus of
-documents with known verdicts, backed by a deterministic oracle, with a standing rule that
-changing a judge's model and re-running the corpus happen in the same change.
+how do you know the judge works? The evaluation design uses a **balanced** corpus of
+documents with known verdicts and a deterministic oracle, with a standing rule that
+changing a judge's model and re-running the corpus happen in the same change. This checkout
+contains the example corpus metadata, but not the fixtures, oracle, or runner; it does not
+provide a runnable regression suite.
 
 Balanced on purpose — against a 1-READY / 11-NOT-READY corpus, a classifier that returns NOT
 READY unconditionally scores 91.7% and carries no information at all. **Before trusting any eval
@@ -97,8 +103,8 @@ Full argument in [`docs/LLM-AS-JUDGE.md`](docs/LLM-AS-JUDGE.md); corpus shape in
 
 Two rules keep this from becoming theater:
 
-1. **Every PRD declares success metrics and open questions.** No exceptions — the template
-   will not validate without them.
+1. **Every PRD declares success metrics and open questions.** The PRD skill
+   requires them; no executable template validator is shipped.
 2. **Every shipped initiative is graded against the metrics it declared.** A separate
    `metrics-review` skill reads the targets, reads the actuals, and returns a verdict:
    double down, iterate, investigate, or sunset.
@@ -109,7 +115,7 @@ analytics events as the measurement method, and those events had never been buil
 you write in a planning document is not a metric. It is an intention, until someone owns
 building it.
 
-That finding is the reason the instrumentation check is now a gate rather than a good habit.
+That finding is why the shipped PRD and graduation checklists require a measurement mechanism.
 
 ---
 
@@ -138,12 +144,13 @@ than any single hour saved.
 ## Getting started
 
 ```bash
-git clone https://github.com/<your-account>/pm-operating-system
+git clone https://github.com/chadj-product/pm-operating-system.git
 cd pm-operating-system
 ```
 
 Open the directory with Claude Code. The skills are discovered automatically from
-`.claude/skills/`. Start with:
+`.claude/skills/`. First read [Adoption](docs/ADOPTION.md), initialize the capture inbox,
+and supply the missing templates before using workflows that require them. Start with:
 
 ```
 /capture   an idea you do not want to lose
