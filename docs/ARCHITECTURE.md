@@ -2,6 +2,12 @@
 
 How the pieces compose, and why each one exists where it does.
 
+> **Implementation status:** This document describes the broader operating-model design.
+> This checkout ships Markdown skills, rules, and reviewer definitions. Hook scripts,
+> `.claude/settings.json`, `templates/`, `standards/`, and the promote, sketch, archive,
+> and exec-update skills are absent. See [Adoption](ADOPTION.md) and
+> [Lifecycle](LIFECYCLE.md) for the supported setup and procedural gates.
+
 ---
 
 ## The context budget is the design constraint
@@ -92,9 +98,10 @@ report.
 
 Three design rules:
 
-**1. Reviewers are read-only.** None of the four review agents can write to disk. This is
-enforced by their tool grants, not by asking nicely. A reviewer that can edit becomes a
-co-author, and a co-author has an interest in the document being good — which is precisely
+**1. Reviewers should be read-only.** All four are instructed not to edit. Three grant only
+`Read, Grep, Glob`; `tech-feasibility` also grants `Bash`. That shell capability means the
+current tool grants do not mechanically guarantee read-only behavior for all four.
+A reviewer that can edit becomes a co-author, and a co-author has an interest in the document being good — which is precisely
 the interest that makes them stop finding problems in it.
 
 **2. One point of view per agent.** The temptation is to build a single "review this PRD"
@@ -124,7 +131,7 @@ SessionStart ── environment preparation   ── refresh indexes, check for 
 hook that fires constantly gets disabled within a week, and then you have neither the hook
 nor the discipline it replaced.
 
-The two in this repo:
+The two hooks described by the design (neither is included in this checkout):
 
 - `verify-output.sh` — a `PostToolUse` check that a written artifact matches its template's
   required sections. Warns rather than blocks, because the failure mode of a false positive
@@ -150,6 +157,8 @@ If you find yourself adding a fourth, first check whether it is really a skill.
 ---
 
 ## Directory layout
+
+The intended full layout is shown below; it is not an inventory of shipped files.
 
 ```
 .claude/
@@ -179,17 +188,20 @@ sharing the work.
 
 ## Why lifecycle stages are directories
 
-Because the alternative is a status field, and a status field lies.
+The design uses directories for broad routing and metadata for graduation. The current
+skills write PRDs and reviews to `work/pipeline/<slug>/`; `/graduate` stamps the initiative
+README without moving artifacts. No path guard enforces these conventions in this checkout.
+
+The motivation for the broader directory-based design follows.
 
 A document that says `status: in-review` in its frontmatter is one careless edit away from
 saying something false, and nothing checks it. A document in `initiatives/` **is** in the
 initiatives stage — the filesystem is the source of truth, `ls` is the status report, and
 moving between stages is an explicit, reviewable, revertible act.
 
-The cost is that promotion requires a real file move, and file moves break links. The
-mitigation is that only two skills are permitted to move anything (`promote` and `archive`),
-and both of them fix inbound references as part of the move. Everything else stamps metadata
-and leaves the file where it is.
+In the broader design, only `promote` and `archive` would move artifacts and repair inbound
+references. Those skills are not shipped, so neither moves nor reference repairs are
+implemented here. The shipped graduation procedure leaves files in place to preserve links.
 
 This is the single most contested design decision in the system, and I would make it the same
 way again. Status fields decay; directories cannot.

@@ -1,5 +1,11 @@
 # Evaluating the judges
 
+> **Implementation status:** This essay describes the evaluation design, not an executable
+> suite shipped here. The current `/review` skill dispatches four reviewers and records
+> findings; `/graduate` walks its own eight-item checklist. Neither implements
+> `/review --gates`. The example JSON is present, but its fixtures, deterministic oracle,
+> runner, and CI are absent. Its expected score is illustrative, not a verified run.
+
 The review stage uses language models to grade product documents. That raises the obvious
 question, and it is the one most "AI reviewer" systems never answer: **how do you know the
 judge is any good?**
@@ -34,8 +40,9 @@ check that becomes free, fast, and perfectly repeatable.
 
 ## The enforcement path calls the review path
 
-`/graduate` does not define its own checklist. Its second step is literally *run `/review
---gates` and use that verdict*.
+The shared-engine design calls for `/graduate` to invoke `/review --gates` and use that
+verdict. This remains an adoption target: the shipped graduate skill instead defines its
+own checklist, and the shipped review skill has no `--gates` mode.
 
 This looks like a small refactor. It is the most important structural decision in the system.
 
